@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SWF Player</title>
     <style>
-        /* Eliminate all borders, padding, scrollbars, and browser elements */
         html, body {
             margin: 0;
             padding: 0;
@@ -26,8 +25,14 @@
             height: 100%;
         }
     </style>
-    <!-- Load the official standalone Ruffle player script -->
-    <script src="https://unpkg.com"></script>
+    
+    <script>
+        // FIX: Define the global object immediately so it never evaluates as undefined
+        window.RufflePlayer = window.RufflePlayer || {};
+    </script>
+    
+    <!-- Load the official Ruffle bundle -->
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 </head>
 <body>
 
@@ -36,21 +41,26 @@
     </div>
 
     <script>
-        window.addEventListener("DOMContentLoaded", () => {
+        // Wait completely for the unpkg script to register into the window namespace
+        window.addEventListener("load", () => {
             const urlParams = new URLSearchParams(window.location.search);
             const swfParam = urlParams.get('swf');
 
             if (swfParam) {
-                // Safely convert a relative file name into an absolute URL matching your domain
-                const resolvedUrl = new URL(swfParam, window.location.href).href;
+                // Safeguard against runtime crashes using the optional chaining (?.) operator
+                const ruffle = window.RufflePlayer?.newest();
+                
+                if (!ruffle) {
+                    document.body.innerHTML = "<div style='color: #ff3b30; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%; padding-left: 10%; padding-right: 10%;'><strong>Ruffle Engine Load Failed</strong><br><br>Your iPad blocked the WebAssembly player script from unpkg.com.<br>Try refreshing, or use a local server environment app like Koder.</div>";
+                    return;
+                }
 
-                const ruffle = window.RufflePlayer.newest();
+                const absoluteUrl = new URL(swfParam, window.location.href).href;
                 const player = ruffle.createPlayer();
                 document.getElementById("player").appendChild(player);
 
-                // Initialize the game with pure full-screen aspect configurations
                 player.load({
-                    url: resolvedUrl,
+                    url: absoluteUrl,
                     allowScriptAccess: true,
                     backgroundColor: "#000000",
                     scale: "showAll",
@@ -58,7 +68,7 @@
                     forceScale: true
                 });
             } else {
-                document.body.innerHTML = "<div style='color: #888888; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%; font-size: 16px;'>Usage: ?swf=filename.swf</div>";
+                document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf</div>";
             }
         });
     </script>
