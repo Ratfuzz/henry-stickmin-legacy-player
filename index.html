@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SWF Player</title>
     <style>
-        /* Force absolute full screen with zero margins or scrollbars */
+        /* Eliminate all borders, padding, scrollbars, and browser elements */
         html, body {
             margin: 0;
             padding: 0;
@@ -14,7 +14,6 @@
             overflow: hidden;
             background-color: #000000;
         }
-        /* Make the Ruffle container scale dynamically to the entire viewport */
         #ruffle-container {
             width: 100%;
             height: 100%;
@@ -38,28 +37,28 @@
 
     <script>
         window.addEventListener("DOMContentLoaded", () => {
-            // Parse the URL parameters to find ?swf=
             const urlParams = new URLSearchParams(window.location.search);
-            const swfFile = urlParams.get('swf');
+            const swfParam = urlParams.get('swf');
 
-            if (swfFile) {
-                // Initialize Ruffle player engine
+            if (swfParam) {
+                // Safely convert a relative file name into an absolute URL matching your domain
+                const resolvedUrl = new URL(swfParam, window.location.href).href;
+
                 const ruffle = window.RufflePlayer.newest();
                 const player = ruffle.createPlayer();
-                const container = document.getElementById("player");
-                container.appendChild(player);
+                document.getElementById("player").appendChild(player);
 
-                // Configure for optimal full-window performance
+                // Initialize the game with pure full-screen aspect configurations
                 player.load({
-                    url: swfFile,
+                    url: resolvedUrl,
                     allowScriptAccess: true,
                     backgroundColor: "#000000",
                     scale: "showAll",
-                    letterbox: "on"
+                    letterbox: "on",
+                    forceScale: true
                 });
             } else {
-                // Warning message shown only if the URL parameter is missing
-                document.body.innerHTML = "<div style='color: white; font-family: sans-serif; text-align: center; padding-top: 20%;'>Error: Please specify an SWF file in the URL. Example: player.html?swf=game.swf</div>";
+                document.body.innerHTML = "<div style='color: #888888; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%; font-size: 16px;'>Usage: ?swf=filename.swf</div>";
             }
         });
     </script>
