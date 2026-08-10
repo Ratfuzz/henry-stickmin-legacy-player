@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SWF Player</title>
+    <style>
+        /* Force absolute full screen with zero margins or scrollbars */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+        }
+        /* Make the Ruffle container scale dynamically to the entire viewport */
+        #ruffle-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #player {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+    <!-- Load the official standalone Ruffle player script -->
+    <script src="https://unpkg.com"></script>
+</head>
+<body>
+
+    <div id="ruffle-container">
+        <div id="player"></div>
+    </div>
+
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            // Parse the URL parameters to find ?swf=
+            const urlParams = new URLSearchParams(window.location.search);
+            const swfFile = urlParams.get('swf');
+
+            if (swfFile) {
+                // Initialize Ruffle player engine
+                const ruffle = window.RufflePlayer.newest();
+                const player = ruffle.createPlayer();
+                const container = document.getElementById("player");
+                container.appendChild(player);
+
+                // Configure for optimal full-window performance
+                player.load({
+                    url: swfFile,
+                    allowScriptAccess: true,
+                    backgroundColor: "#000000",
+                    scale: "showAll",
+                    letterbox: "on"
+                });
+            } else {
+                // Warning message shown only if the URL parameter is missing
+                document.body.innerHTML = "<div style='color: white; font-family: sans-serif; text-align: center; padding-top: 20%;'>Error: Please specify an SWF file in the URL. Example: player.html?swf=game.swf</div>";
+            }
+        });
+    </script>
+</body>
+</html>
