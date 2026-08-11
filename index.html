@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <script>
-        // Step A: Parse browser header parameters immediately
+        // 1. Handle manifest file selection separately at the top
         const urlArgs = new URLSearchParams(window.location.search);
         const targetIcon = (urlArgs.get('icon') || 'std').toLowerCase();
-        const currentSwf = urlArgs.get('swf') || '';
 
-        // Step B: Set the page title to the appropriate variant layout immediately
         const gameNames = {
           "ctp": "Crossing the Pit",
-          "btb": "Breaking the Bank",
+          "btb": "Breaking the Bank", 
           "etp": "Escaping the Prison",
           "std": "Stealing the Diamond",
           "ita": "Infiltrating the Airship",
@@ -21,15 +19,12 @@
         };
         document.title = gameNames[targetIcon] || "SWF Player";
 
-        // Step C: Link directly to a real, un-tampered physical configuration file
-        // This ensures Chrome handles asset routes relative to your actual website directory!
         const manifestLink = document.createElement('link');
         manifestLink.id = 'app-manifest';
         manifestLink.rel = 'manifest';
         manifestLink.href = `${targetIcon}.json`;
         document.head.appendChild(manifestLink);
 
-        // Step D: Register a physical root background pipeline worker 
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js');
@@ -38,7 +33,6 @@
     </script>
 
     <style>
-        /* Force absolute viewport boundaries across modern mobile browsers */
         html, body {
             margin: 0;
             padding: 0;
@@ -54,7 +48,6 @@
             justify-content: center;
             align-items: center;
         }
-        /* Target the automatically generated ruffle-player element styling */
         #player, ruffle-player {
             width: 100% !important;
             height: 100% !important;
@@ -82,31 +75,41 @@
     </div>
 
     <script>
-        // RESTORED: Your original loading block reads parameters safely here
+        // FIX: Replaced window load with a listener that polls for the active script state
         window.addEventListener("load", () => {
             const urlParams = new URLSearchParams(window.location.search);
             const swfParam = urlParams.get('swf');
 
             if (swfParam) {
-                const ruffle = window.RufflePlayer?.newest();
-                
-                if (!ruffle) {
-                    document.body.innerHTML = "<div style='color: #ff3b30; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Ruffle Engine Load Failed</div>";
-                    return;
+                // Check if Ruffle API is present on the window object
+                if (!window.RufflePlayer || typeof window.RufflePlayer.newest !== "function") {
+                    // Fallback polling loop if script loading lags behind execution
+                    const checkInterval = setInterval(() => {
+                        if (window.RufflePlayer && typeof window.RufflePlayer.newest === "function") {
+                            clearInterval(checkInterval);
+                            initRufflePlayer(swfParam);
+                        }
+                    }, 100);
+                } else {
+                    initRufflePlayer(swfParam);
                 }
-
-                const absoluteUrl = new URL(swfParam, window.location.href).href;
-                const player = ruffle.createPlayer();
-                document.getElementById("player").appendChild(player);
-
-                player.load({
-                    url: absoluteUrl,
-                    allowScriptAccess: true
-                });
             } else {
                 document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf</div>";
             }
         });
+
+        // Modular loading controller function
+        function initRufflePlayer(swfUrl) {
+            const ruffle = window.RufflePlayer.newest();
+            const absoluteUrl = new URL(swfUrl, window.location.href).href;
+            const player = ruffle.createPlayer();
+            
+            document.getElementById("player").appendChild(player);
+            player.load({
+                url: absoluteUrl,
+                allowScriptAccess: true
+            });
+        }
     </script>
 </body>
 </html>
