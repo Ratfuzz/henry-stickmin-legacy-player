@@ -1,0 +1,10 @@
+{
+  "name": "Escaping the Prison",
+  "short_name": "ETP",
+  "start_url": "/index.html?swf=escapingtheprisongame.swf&icon=etp",
+  "display": "standalone",
+  "icons": [
+    {"src": "icons/etp-ios.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/etp-ios.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
