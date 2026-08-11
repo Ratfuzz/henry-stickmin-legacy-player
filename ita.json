@@ -1,0 +1,10 @@
+{
+  "name": "Infiltrating the Airship",
+  "short_name": "ITA",
+  "start_url": "/index.html?swf=infiltratingtheairshipgame.swf&icon=ita",
+  "display": "standalone",
+  "icons": [
+    {"src": "icons/ita-ios.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/ita-ios.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
