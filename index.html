@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <script>
+    
+    <!-- FIX: Removed the empty unclosed <script> tag that was breaking the parser here -->
     <link id="app-manifest" rel="manifest" href="manifest.json">
 
-  <script>
+    <script>
     // Step B: Extract the custom parameters from the browser header
     const urlArgs = new URLSearchParams(window.location.search);
     const targetIcon = urlArgs.get('icon') || 'std';
@@ -27,8 +28,10 @@
         manifestData.name = assignedName;
         manifestData.short_name = assignedName;
         
-        // This ensures clicking the desktop icon remembers your chosen parameter string
-        manifestData.start_url = `/index.html?icon=${targetIcon}`;
+        // FIX: Build a fully qualified absolute URL so Chrome's installer engine 
+        // doesn't lose tracking context when reading the dynamic Blob manifest.
+        const absoluteStartUrl = new URL(`./index.html?icon=${targetIcon}`, window.location.href).href;
+        manifestData.start_url = absoluteStartUrl;
         manifestData.id = `/?game=${targetIcon}`;
         
         // Maps the icon correctly to your local assets folder directory
@@ -47,7 +50,7 @@
         navigator.serviceWorker.register('sw.js');
       });
     }
-  </script>
+    </script>
     <title>SWF Player</title>
     <style>
         /* Force absolute viewport boundaries across modern mobile browsers */
