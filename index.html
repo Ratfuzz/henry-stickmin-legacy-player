@@ -76,79 +76,94 @@
                 document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf</div>";
             }
         });
-    </script>
-<!-- Fully Translucent Overlay Container (Compact & Bottom-Right Placed) -->
+    </script><!-- Native Input Box Overlay Container (Bottom-Right) -->
 <div id="qte-container" style="
     position: fixed; 
     bottom: 20px; 
     right: 20px; 
     display: none; 
-    gap: 10px; 
-    z-index: 2147483647; 
-    pointer-events: none;
+    z-index: 2147483647;
 ">
-    <!-- Smaller buttons restoring pointer events for gameplay interaction -->
-    <button id="btn-k" style="pointer-events: auto; width: 50px; height: 50px; background: rgba(0,0,0,0.85); color: white; border: 1.5px solid white; border-radius: 50%; font-size: 18px; font-weight: bold; -webkit-user-select: none; user-select: none;">K</button>
-    <button id="btn-space" style="pointer-events: auto; width: 85px; height: 50px; background: rgba(0,0,0,0.85); color: white; border: 1.5px solid white; border-radius: 25px; font-size: 14px; font-weight: bold; -webkit-user-select: none; user-select: none;">JUMP</button>
-    <button id="btn-r" style="pointer-events: auto; width: 50px; height: 50px; background: rgba(0,0,0,0.85); color: white; border: 1.5px solid white; border-radius: 50%; font-size: 18px; font-weight: bold; -webkit-user-select: none; user-select: none;">R</button>
+    <!-- Real text input box styled to look like an instruction label -->
+    <input type="text" id="game-keyboard-trigger" placeholder="TAP HERE FOR QTE KEYS" readonly style="
+        width: 180px;
+        height: 50px;
+        background: rgba(0,0,0,0.85);
+        color: #fff;
+        border: 1.5px solid #fff;
+        border-radius: 25px;
+        text-align: center;
+        font-family: sans-serif;
+        font-size: 13px;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        outline: none;
+        -webkit-appearance: none;
+    ">
 </div>
 
 <script>
     (function() {
         const qteContainer = document.getElementById('qte-container');
+        const inputTrigger = document.getElementById('game-keyboard-trigger');
 
-        // Check the URL parameter for the correct game filename
+        // Target check for Stealing the Diamond parameters
         const urlParams = new URLSearchParams(window.location.search);
         const activeSwf = urlParams.get('swf') || "";
         
-        // Show the buttons permanently ONLY if it matches stealingthediamondgame.swf
         if (activeSwf.toLowerCase().includes('stealingthediamondgame.swf')) {
-            qteContainer.style.display = 'flex';
+            qteContainer.style.display = 'block';
         } else {
-            return; // Exit and leave buttons hidden for any other game
+            return;
         }
 
-        // Deep-targeting keyboard engine for Ruffle Shadow DOM elements
-        function triggerKey(keyChar, keyCode) {
+        // Tap action forces standard native iOS focus 
+        inputTrigger.addEventListener('touchstart', function(e) {
+            // Remove readonly state immediately during touch event loop
+            inputTrigger.removeAttribute('readonly');
+            inputTrigger.focus();
+        });
+
+        // Whenever the user taps any button on their system layout, pass the input straight to Ruffle
+        inputTrigger.addEventListener('input', function(e) {
             const player = document.querySelector('ruffle-player');
             if (!player) return;
 
-            // Target the raw internal canvas elements inside Ruffle's encapsulation layer
-            const shadowCanvas = player.shadowRoot?.querySelector('canvas');
-            const targets = [player, window, document];
+            // Grab the last typed text character
+            const lastChar = inputTrigger.value.slice(-1).toLowerCase();
             
-            if (shadowCanvas) {
-                targets.unshift(shadowCanvas);
-                // Force focus tracking directly into the WebAssembly runtime space
-                shadowCanvas.focus();
+            // Map character to matching virtual codes
+            let keyCode = 0;
+            if (lastChar === 'k') keyCode = 75;
+            if (lastChar === 'r') keyCode = 82;
+            if (lastChar === ' ') keyCode = 32;
+
+            if (keyCode > 0) {
+                // Focus Ruffle container immediately before executing
+                player.focus();
+
+                // Fire events down Ruffle's key tracker
+                ['keydown', 'keyup'].forEach(eventType => {
+                    player.dispatchEvent(new KeyboardEvent(eventType, {
+                        key: lastChar,
+                        code: lastChar === ' ' ? 'Space' : 'Key' + lastChar.toUpperCase(),
+                        keyCode: keyCode,
+                        which: keyCode,
+                        bubbles: true,
+                        cancelable: true,
+                        composed: true
+                    }));
+                });
             }
 
-            const isSpace = (keyChar === ' ');
-
-            ['keydown', 'keyup'].forEach(eventType => {
-                const eventConfig = {
-                    key: isSpace ? ' ' : keyChar,
-                    code: isSpace ? 'Space' : 'Key' + keyChar.toUpperCase(),
-                    keyCode: keyCode,
-                    which: keyCode,
-                    bubbles: true,
-                    cancelable: true,
-                    composed: true // Allows event to blast straight through Shadow DOM boundaries
-                };
-
-                const ev = new KeyboardEvent(eventType, eventConfig);
-                
-                // Blast the event across all active DOM structural trees
-                targets.forEach(t => {
-                    if (t) t.dispatchEvent(ev);
-                });
-            });
-        }
-
-        // Mobile touch triggers mapping K, Space, and R
-        document.getElementById('btn-k').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('k', 75); });
-        document.getElementById('btn-space').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey(' ', 32); });
-        document.getElementById('btn-r').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('r', 82); });
+            // Wipe out input value field clean to keep capturing typing strokes endlessly
+            inputTrigger.value = '';
+            
+            // Re-assert focus immediately back onto input to keep keyboard frame from collapsing
+            setTimeout(() => {
+                inputTrigger.focus();
+            }, 10);
+        });
     })();
 </script>
 </body>
