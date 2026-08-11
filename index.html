@@ -4,54 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- FIX: Removed the empty unclosed <script> tag that was breaking the parser here -->
-    <link id="app-manifest" rel="manifest" href="manifest.json">
-
     <script>
-    // Step B: Extract the custom parameters from the browser header
-    const urlArgs = new URLSearchParams(window.location.search);
-    const targetIcon = urlArgs.get('icon') || 'std';
+        // Step A: Parse browser header parameters immediately
+        const urlArgs = new URLSearchParams(window.location.search);
+        const targetIcon = (urlArgs.get('icon') || 'std').toLowerCase();
+        const currentSwf = urlArgs.get('swf') || '';
 
-    const gameNames = {
-      "etp": "Escaping the Prison",
-      "std": "Stealing the Diamond",
-      "ita": "Infiltrating the Airship",
-      "ftc": "Fleeing the Complex"
-    };
+        // Step B: Set the page title to the appropriate variant layout immediately
+        const gameNames = {
+          "ctp": "Crossing the Pit",
+          "btb": "Breaking the Bank",
+          "etp": "Escaping the Prison",
+          "std": "Stealing the Diamond",
+          "ita": "Infiltrating the Airship",
+          "ftc": "Fleeing the Complex"
+        };
+        document.title = gameNames[targetIcon] || "SWF Player";
 
-    const assignedName = gameNames[targetIcon.toLowerCase()] || gameNames["std"];
+        // Step C: Link directly to a real, un-tampered physical configuration file
+        // This ensures Chrome handles asset routes relative to your actual website directory!
+        const manifestLink = document.createElement('link');
+        manifestLink.id = 'app-manifest';
+        manifestLink.rel = 'manifest';
+        manifestLink.href = `${targetIcon}.json`;
+        document.head.appendChild(manifestLink);
 
-    // Step C: Intercept and overwrite manifest records before installation triggers
-    fetch('manifest.json')
-      .then(response => response.json())
-      .then(manifestData => {
-        manifestData.name = assignedName;
-        manifestData.short_name = assignedName;
-        
-        // FIX: Build a fully qualified absolute URL so Chrome's installer engine 
-        // doesn't lose tracking context when reading the dynamic Blob manifest.
-        const absoluteStartUrl = new URL(`./index.html?icon=${targetIcon}`, window.location.href).href;
-        manifestData.start_url = absoluteStartUrl;
-        manifestData.id = `/?game=${targetIcon}`;
-        
-        // Maps the icon correctly to your local assets folder directory
-        manifestData.icons.forEach(img => {
-          img.src = `icons/${targetIcon}-ios.png`;
-        });
-
-        // Convert the modified object back into an active page link element
-        const modifiedBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-        document.getElementById('app-manifest').setAttribute('href', URL.createObjectURL(modifiedBlob));
-      });
-
-    // Step D: Spin up a physical file worker so Chrome opens a true standalone frame
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-      });
-    }
+        // Step D: Register a physical root background pipeline worker 
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js');
+          });
+        }
     </script>
-    <title>SWF Player</title>
+
     <style>
         /* Force absolute viewport boundaries across modern mobile browsers */
         html, body {
@@ -91,7 +76,7 @@
     </script>
     
     <!-- Load official Ruffle bundle -->
-    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    <script src="https://unpkg.com"></script>
 </head>
 <body>
 
@@ -101,10 +86,7 @@
 
     <script>
         window.addEventListener("load", () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const swfParam = urlParams.get('swf');
-
-            if (swfParam) {
+            if (currentSwf) {
                 const ruffle = window.RufflePlayer?.newest();
                 
                 if (!ruffle) {
@@ -112,7 +94,7 @@
                     return;
                 }
 
-                const absoluteUrl = new URL(swfParam, window.location.href).href;
+                const absoluteUrl = new URL(currentSwf, window.location.href).href;
                 const player = ruffle.createPlayer();
                 document.getElementById("player").appendChild(player);
 
@@ -121,7 +103,7 @@
                     allowScriptAccess: true
                 });
             } else {
-                document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf</div>";
+                document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf&icon=std</div>";
             }
         });
     </script>
