@@ -77,7 +77,7 @@
             }
         });
     </script>
-   <!-- Fully Translucent Overlay Container -->
+<!-- Fully Translucent Overlay Container -->
 <div id="qte-container" style="
     position: fixed; 
     bottom: 40px; 
@@ -89,19 +89,28 @@
     pointer-events: none;
 ">
     <!-- Buttons restore pointer events so they can be tapped -->
-    <button id="btn-r" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.8); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold;">R</button>
-    <button id="btn-k" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.8); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold;">K</button>
-    <button id="btn-space" style="pointer-events: auto; width: 120px; height: 70px; background: rgba(0,0,0,0.8); color: white; border: 2px solid white; border-radius: 35px; font-size: 20px; font-weight: bold;">SPACE</button>
+    <button id="btn-r" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.85); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold; -webkit-user-select: none; user-select: none;">R</button>
+    <button id="btn-k" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.85); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold; -webkit-user-select: none; user-select: none;">K</button>
+    <button id="btn-space" style="pointer-events: auto; width: 120px; height: 70px; background: rgba(0,0,0,0.85); color: white; border: 2px solid white; border-radius: 35px; font-size: 20px; font-weight: bold; -webkit-user-select: none; user-select: none;">SPACE</button>
 </div>
 
 <script>
     (function() {
         const qteContainer = document.getElementById('qte-container');
 
-        // Virtual keyboard event injection logic
+        // Verify file matches your target layout from the address search criteria
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeSwf = urlParams.get('swf') || "";
+
+        // Completely exit if the file string is not Stealing the Diamond
+        if (!activeSwf.toLowerCase().includes('stealingthediamond')) {
+            return;
+        }
+
+        // Keyboard event factory targeting the custom elements safely
         function triggerKey(keyChar, keyCode) {
-            const player = document.querySelector('ruffle-player');
-            const target = player ? (player.shadowRoot?.activeElement || player) : window;
+            const player = document.querySelector('ruffle-player') || document.querySelector('#player') || window;
+            const target = player.shadowRoot?.activeElement || player;
             
             ['keydown', 'keyup'].forEach(eventType => {
                 target.dispatchEvent(new KeyboardEvent(eventType, {
@@ -115,60 +124,36 @@
             });
         }
 
-        // Instant touch responses to guarantee tight QTE timing windows on iOS
+        // Mobile touch hooks with browser default suppression
         document.getElementById('btn-r').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('r', 82); });
         document.getElementById('btn-k').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('k', 75); });
         document.getElementById('btn-space').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey(' ', 32); });
 
-        // High-performance engine polling loop to look for the scooter frames
-        function trackFlashFrames() {
-            const ruffle = document.querySelector('ruffle-player');
-            if (!ruffle) {
-                setTimeout(trackFlashFrames, 250); // Re-poll if player isn't in DOM yet
-                return;
-            }
+        // Event listener to watch for touch choices on the main game canvas area
+        window.addEventListener('touchstart', function(e) {
+            // If the overlay buttons are already up, don't restart tracking timers
+            if (qteContainer.style.display === 'flex') return;
 
-            setInterval(() => {
-                try {
-                    // Check if a file is loaded and fetch its filename from the Ruffle configuration or path attribute
-                    const currentSwf = ruffle.getAttribute('swf') || ruffle.config?.file || "";
+            // When a user taps the screen, check if they are touching the top half or coordinate boundaries
+            // This detects the menu option selection area for the "Bust In" button placement
+            const touchY = e.touches[0].clientY;
+            const screenHeight = window.innerHeight;
+
+            // "Bust In" is typically positioned near the upper quadrant of the option screen
+            if (touchY < (screenHeight * 0.6)) {
+                // Wait exactly 4.2 seconds for the scooter intro animation to play out
+                setTimeout(() => {
+                    qteContainer.style.display = 'flex';
                     
-                    // Stop executing and keep hidden if it is not the Stealing the Diamond file
-                    if (!currentSwf.toLowerCase().includes('stealingthediamondgame.swf')) {
-                        if (qteContainer.style.display !== 'none') {
-                            qteContainer.style.display = 'none';
-                        }
-                        return;
-                    }
+                    // Keep buttons active for exactly 11 seconds (duration of the scooter path QTE) then clear
+                    setTimeout(() => {
+                        qteContainer.style.display = 'none';
+                    }, 11000);
 
-                    // Check for the active emulated swf instance and grab frame index
-                    if (ruffle.instance && typeof ruffle.instance.get_current_frame === 'function') {
-                        const currentFrame = ruffle.instance.get_current_frame();
-                        
-                        // Stealing the Diamond "Bust In" Scooter scene window boundary frames
-                        if (currentFrame >= 180 && currentFrame <= 420) {
-                            if (qteContainer.style.display !== 'flex') {
-                                qteContainer.style.display = 'flex';
-                            }
-                        } else {
-                            if (qteContainer.style.display !== 'none') {
-                                qteContainer.style.display = 'none';
-                            }
-                        }
-                    }
-                } catch (err) {
-                    // Fail silently during player instantiation transitions
-                }
-            }, 50); // Checks 20 times a second for lightning-fast overlay presentation
-        }
-
-        // Initialize tracking as soon as document layout parses
-        if (document.readyState === 'loading') {
-            window.addEventListener('DOMContentLoaded', trackFlashFrames);
-        } else {
-            trackFlashFrames();
-        }
+                }, 4200); 
+            }
+        });
     })();
-</script> 
+</script>
 </body>
 </html>
