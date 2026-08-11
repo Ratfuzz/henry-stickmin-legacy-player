@@ -1,0 +1,10 @@
+{
+  "name": "Stealing the Diamond",
+  "short_name": "STD",
+  "start_url": "/index.html?swf=stealingthediamondgame.swf&icon=std",
+  "display": "standalone",
+  "icons": [
+    {"src": "icons/std-ios.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/std-ios.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
