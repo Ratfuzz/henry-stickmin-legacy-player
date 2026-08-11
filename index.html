@@ -63,14 +63,11 @@
     </style>
     
     <script>
-        // Set up global definitions
         window.RufflePlayer = window.RufflePlayer || {};
-        
-        // FIX: Global configuration blocks internal SWF "noScale" bypass commands
         window.RufflePlayer.config = {
-            scale: "showAll",       // Keeps original proportions without stretching characters
-            forceScale: true,       // Forcefully blocks 'noScale' scripts inside Henry Stickmin
-            letterbox: "on",        // Fills remaining space with the specified background color
+            scale: "showAll",       
+            forceScale: true,       
+            letterbox: "on",        
             backgroundColor: "#000000"
         };
     </script>
@@ -85,8 +82,12 @@
     </div>
 
     <script>
+        // RESTORED: Your original loading block reads parameters safely here
         window.addEventListener("load", () => {
-            if (currentSwf) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const swfParam = urlParams.get('swf');
+
+            if (swfParam) {
                 const ruffle = window.RufflePlayer?.newest();
                 
                 if (!ruffle) {
@@ -94,7 +95,7 @@
                     return;
                 }
 
-                const absoluteUrl = new URL(currentSwf, window.location.href).href;
+                const absoluteUrl = new URL(swfParam, window.location.href).href;
                 const player = ruffle.createPlayer();
                 document.getElementById("player").appendChild(player);
 
@@ -103,7 +104,7 @@
                     allowScriptAccess: true
                 });
             } else {
-                document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf&icon=std</div>";
+                document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf</div>";
             }
         });
     </script>
