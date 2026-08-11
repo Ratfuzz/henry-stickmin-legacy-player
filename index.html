@@ -77,5 +77,98 @@
             }
         });
     </script>
+   <!-- Fully Translucent Overlay Container -->
+<div id="qte-container" style="
+    position: fixed; 
+    bottom: 40px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    display: none; 
+    gap: 20px; 
+    z-index: 2147483647; 
+    pointer-events: none;
+">
+    <!-- Buttons restore pointer events so they can be tapped -->
+    <button id="btn-r" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.8); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold;">R</button>
+    <button id="btn-k" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.8); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold;">K</button>
+    <button id="btn-space" style="pointer-events: auto; width: 120px; height: 70px; background: rgba(0,0,0,0.8); color: white; border: 2px solid white; border-radius: 35px; font-size: 20px; font-weight: bold;">SPACE</button>
+</div>
+
+<script>
+    (function() {
+        const qteContainer = document.getElementById('qte-container');
+
+        // Virtual keyboard event injection logic
+        function triggerKey(keyChar, keyCode) {
+            const player = document.querySelector('ruffle-player');
+            const target = player ? (player.shadowRoot?.activeElement || player) : window;
+            
+            ['keydown', 'keyup'].forEach(eventType => {
+                target.dispatchEvent(new KeyboardEvent(eventType, {
+                    key: keyChar,
+                    code: keyChar === ' ' ? 'Space' : 'Key' + keyChar.toUpperCase(),
+                    keyCode: keyCode,
+                    which: keyCode,
+                    bubbles: true,
+                    cancelable: true
+                }));
+            });
+        }
+
+        // Instant touch responses to guarantee tight QTE timing windows on iOS
+        document.getElementById('btn-r').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('r', 82); });
+        document.getElementById('btn-k').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('k', 75); });
+        document.getElementById('btn-space').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey(' ', 32); });
+
+        // High-performance engine polling loop to look for the scooter frames
+        function trackFlashFrames() {
+            const ruffle = document.querySelector('ruffle-player');
+            if (!ruffle) {
+                setTimeout(trackFlashFrames, 250); // Re-poll if player isn't in DOM yet
+                return;
+            }
+
+            setInterval(() => {
+                try {
+                    // Check if a file is loaded and fetch its filename from the Ruffle configuration or path attribute
+                    const currentSwf = ruffle.getAttribute('swf') || ruffle.config?.file || "";
+                    
+                    // Stop executing and keep hidden if it is not the Stealing the Diamond file
+                    if (!currentSwf.toLowerCase().includes('stealingthediamondgame.swf')) {
+                        if (qteContainer.style.display !== 'none') {
+                            qteContainer.style.display = 'none';
+                        }
+                        return;
+                    }
+
+                    // Check for the active emulated swf instance and grab frame index
+                    if (ruffle.instance && typeof ruffle.instance.get_current_frame === 'function') {
+                        const currentFrame = ruffle.instance.get_current_frame();
+                        
+                        // Stealing the Diamond "Bust In" Scooter scene window boundary frames
+                        if (currentFrame >= 180 && currentFrame <= 420) {
+                            if (qteContainer.style.display !== 'flex') {
+                                qteContainer.style.display = 'flex';
+                            }
+                        } else {
+                            if (qteContainer.style.display !== 'none') {
+                                qteContainer.style.display = 'none';
+                            }
+                        }
+                    }
+                } catch (err) {
+                    // Fail silently during player instantiation transitions
+                }
+            }, 50); // Checks 20 times a second for lightning-fast overlay presentation
+        }
+
+        // Initialize tracking as soon as document layout parses
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', trackFlashFrames);
+        } else {
+            trackFlashFrames();
+        }
+    })();
+</script> 
 </body>
 </html>
