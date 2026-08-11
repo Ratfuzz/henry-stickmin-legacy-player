@@ -1,0 +1,10 @@
+{
+  "name": "Crossing the Pit",
+  "short_name": "CTP",
+  "start_url": "/index.html?swf=crossingthepit.swf&icon=ita",
+  "display": "standalone",
+  "icons": [
+    {"src": "icons/ctp-ios.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/ctp-ios.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
