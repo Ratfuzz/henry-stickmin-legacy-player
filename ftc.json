@@ -1,0 +1,10 @@
+{
+  "name": "Fleeing the Complex",
+  "short_name": "FTC",
+  "start_url": "/index.html?swf=fleeing_the_complex.swf&icon=ftc",
+  "display": "standalone",
+  "icons": [
+    {"src": "icons/ftc-ios.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/ftc-ios.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
