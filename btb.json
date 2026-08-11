@@ -1,0 +1,10 @@
+{
+  "name": "Breaking the Bank",
+  "short_name": "BTB",
+  "start_url": "/index.html?swf=breakingthebank.swf&icon=btb",
+  "display": "standalone",
+  "icons": [
+    {"src": "icons/btb-ios.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/btb-ios.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
