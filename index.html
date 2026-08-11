@@ -77,7 +77,7 @@
             }
         });
     </script>
-    <!-- Fully Translucent Overlay Container (Compact & Bottom-Right Placed) -->
+<!-- Fully Translucent Overlay Container (Compact & Bottom-Right Placed) -->
 <div id="qte-container" style="
     position: fixed; 
     bottom: 20px; 
@@ -108,20 +108,40 @@
             return; // Exit and leave buttons hidden for any other game
         }
 
-        // Keyboard event factory
+        // Deep-targeting keyboard engine for Ruffle Shadow DOM elements
         function triggerKey(keyChar, keyCode) {
-            const player = document.querySelector('ruffle-player') || document.querySelector('#player') || window;
-            const target = player.shadowRoot?.activeElement || player;
+            const player = document.querySelector('ruffle-player');
+            if (!player) return;
+
+            // Target the raw internal canvas elements inside Ruffle's encapsulation layer
+            const shadowCanvas = player.shadowRoot?.querySelector('canvas');
+            const targets = [player, window, document];
             
+            if (shadowCanvas) {
+                targets.unshift(shadowCanvas);
+                // Force focus tracking directly into the WebAssembly runtime space
+                shadowCanvas.focus();
+            }
+
+            const isSpace = (keyChar === ' ');
+
             ['keydown', 'keyup'].forEach(eventType => {
-                target.dispatchEvent(new KeyboardEvent(eventType, {
-                    key: keyChar,
-                    code: keyChar === ' ' ? 'Space' : 'Key' + keyChar.toUpperCase(),
+                const eventConfig = {
+                    key: isSpace ? ' ' : keyChar,
+                    code: isSpace ? 'Space' : 'Key' + keyChar.toUpperCase(),
                     keyCode: keyCode,
                     which: keyCode,
                     bubbles: true,
-                    cancelable: true
-                }));
+                    cancelable: true,
+                    composed: true // Allows event to blast straight through Shadow DOM boundaries
+                };
+
+                const ev = new KeyboardEvent(eventType, eventConfig);
+                
+                // Blast the event across all active DOM structural trees
+                targets.forEach(t => {
+                    if (t) t.dispatchEvent(ev);
+                });
             });
         }
 
@@ -131,6 +151,5 @@
         document.getElementById('btn-r').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('r', 82); });
     })();
 </script>
-
 </body>
 </html>
