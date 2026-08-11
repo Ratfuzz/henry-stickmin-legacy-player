@@ -4,52 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script>
-    // 1. Snag the parameter from the web address
-    const urlParams = new URLSearchParams(window.location.search);
-    const appKey = urlParams.get('icon') || 'std'; // default to stealing the diamond
+    <link id="app-manifest" rel="manifest" href="manifest.json">
 
-    // 2. Set up names and icon files for each legacy game
-    const gameProfiles = {
-      "ctp": { name: "Crossing the Pit", icon: "icons/ctp-ios.png" },
-      "btb": { name: "Breaking the Bank", icon: "icons/btb-ios.png" },
-      "etp": { name: "Escaping the Prison", icon: "icons/etp-ios.png" },
-      "std": { name: "Stealing the Diamond", icon: "icons/std-ios.png" },
-      "ita": { name: "Infiltrating the Airship", icon: "icons/ita-ios.png" },
-      "ftc": { name: "Fleeing the Complex", icon: "icons/ftc-ios.png" }
+  <script>
+    // Step B: Extract the custom parameters from the browser header
+    const urlArgs = new URLSearchParams(window.location.search);
+    const targetIcon = urlArgs.get('icon') || 'std';
+
+    const gameNames = {
+      "etp": "Escaping the Prison",
+      "std": "Stealing the Diamond",
+      "ita": "Infiltrating the Airship",
+      "ftc": "Fleeing the Complex"
     };
 
-    // Grab the right game data (or use standard fallback if misspelled)
-    const activeGame = gameProfiles[appKey.toLowerCase()] || gameProfiles["std"];
+    const assignedName = gameNames[targetIcon.toLowerCase()] || gameNames["std"];
 
-    // 3. Construct the manifest format for Chrome
-    const customManifest = {
-      "name": activeGame.name,
-      "short_name": activeGame.name,
-      "start_url": window.location.href, // This saves the parameter so it opens the right game later!
-      "display": "standalone",
-      "background_color": "#000000",
-      "theme_color": "#000000",
-      "icons": [
-        {
-          "src": activeGame.icon,
-          "sizes": "192x192",
-          "type": "image/png"
-        },
-        {
-          "src": activeGame.icon,
-          "sizes": "512x512",
-          "type": "image/png"
-        }
-      ]
-    };
+    // Step C: Intercept and overwrite manifest records before installation triggers
+    fetch('manifest.json')
+      .then(response => response.json())
+      .then(manifestData => {
+        manifestData.name = assignedName;
+        manifestData.short_name = assignedName;
+        
+        // This ensures clicking the desktop icon remembers your chosen parameter string
+        manifestData.start_url = `/index.html?icon=${targetIcon}`;
+        manifestData.id = `/?game=${targetIcon}`;
+        
+        // Maps the icon correctly to your local assets folder directory
+        manifestData.icons.forEach(img => {
+          img.src = `icons/${targetIcon}-ios.png`;
+        });
 
-    // 4. Feed the manifest directly to Chrome's parser
-    const manifestBlob = new Blob([JSON.stringify(customManifest)], { type: 'application/json' });
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = URL.createObjectURL(manifestBlob);
-    document.head.appendChild(manifestLink);
-    </script>
+        // Convert the modified object back into an active page link element
+        const modifiedBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        document.getElementById('app-manifest').setAttribute('href', URL.createObjectURL(modifiedBlob));
+      });
+
+    // Step D: Spin up a physical file worker so Chrome opens a true standalone frame
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
     <title>SWF Player</title>
     <style>
         /* Force absolute viewport boundaries across modern mobile browsers */
