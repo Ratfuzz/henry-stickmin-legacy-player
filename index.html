@@ -3,36 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <script>
-        // 1. Handle manifest file selection separately at the top
-        const urlArgs = new URLSearchParams(window.location.search);
-        const targetIcon = (urlArgs.get('icon') || 'std').toLowerCase();
-
-        const gameNames = {
-          "ctp": "Crossing the Pit",
-          "btb": "Breaking the Bank", 
-          "etp": "Escaping the Prison",
-          "std": "Stealing the Diamond",
-          "ita": "Infiltrating the Airship",
-          "ftc": "Fleeing the Complex"
-        };
-        document.title = gameNames[targetIcon] || "SWF Player";
-
-        const manifestLink = document.createElement('link');
-        manifestLink.id = 'app-manifest';
-        manifestLink.rel = 'manifest';
-        manifestLink.href = `${targetIcon}.json`;
-        document.head.appendChild(manifestLink);
-
-        if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
-          });
-        }
-    </script>
-
+    <title>SWF Player</title>
     <style>
+        /* Force absolute viewport boundaries across modern mobile browsers */
         html, body {
             margin: 0;
             padding: 0;
@@ -48,6 +21,7 @@
             justify-content: center;
             align-items: center;
         }
+        /* Target the automatically generated ruffle-player element styling */
         #player, ruffle-player {
             width: 100% !important;
             height: 100% !important;
@@ -56,17 +30,20 @@
     </style>
     
     <script>
+        // Set up global definitions
         window.RufflePlayer = window.RufflePlayer || {};
+        
+        // FIX: Global configuration blocks internal SWF "noScale" bypass commands
         window.RufflePlayer.config = {
-            scale: "showAll",       
-            forceScale: true,       
-            letterbox: "on",        
+            scale: "showAll",       // Keeps original proportions without stretching characters
+            forceScale: true,       // Forcefully blocks 'noScale' scripts inside Henry Stickmin
+            letterbox: "on",        // Fills remaining space with the specified background color
             backgroundColor: "#000000"
         };
     </script>
     
     <!-- Load official Ruffle bundle -->
-    <script src="https://unpkg.com"></script>
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
 </head>
 <body>
 
@@ -75,41 +52,30 @@
     </div>
 
     <script>
-        // FIX: Replaced window load with a listener that polls for the active script state
         window.addEventListener("load", () => {
             const urlParams = new URLSearchParams(window.location.search);
             const swfParam = urlParams.get('swf');
 
             if (swfParam) {
-                // Check if Ruffle API is present on the window object
-                if (!window.RufflePlayer || typeof window.RufflePlayer.newest !== "function") {
-                    // Fallback polling loop if script loading lags behind execution
-                    const checkInterval = setInterval(() => {
-                        if (window.RufflePlayer && typeof window.RufflePlayer.newest === "function") {
-                            clearInterval(checkInterval);
-                            initRufflePlayer(swfParam);
-                        }
-                    }, 100);
-                } else {
-                    initRufflePlayer(swfParam);
+                const ruffle = window.RufflePlayer?.newest();
+                
+                if (!ruffle) {
+                    document.body.innerHTML = "<div style='color: #ff3b30; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Ruffle Engine Load Failed</div>";
+                    return;
                 }
+
+                const absoluteUrl = new URL(swfParam, window.location.href).href;
+                const player = ruffle.createPlayer();
+                document.getElementById("player").appendChild(player);
+
+                player.load({
+                    url: absoluteUrl,
+                    allowScriptAccess: true
+                });
             } else {
                 document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf</div>";
             }
         });
-
-        // Modular loading controller function
-        function initRufflePlayer(swfUrl) {
-            const ruffle = window.RufflePlayer.newest();
-            const absoluteUrl = new URL(swfUrl, window.location.href).href;
-            const player = ruffle.createPlayer();
-            
-            document.getElementById("player").appendChild(player);
-            player.load({
-                url: absoluteUrl,
-                allowScriptAccess: true
-            });
-        }
     </script>
 </body>
 </html>
