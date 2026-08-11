@@ -76,7 +76,8 @@
                 document.body.innerHTML = "<div style='color: #666; font-family: -apple-system, sans-serif; text-align: center; padding-top: 20%;'>Usage: ?swf=filename.swf</div>";
             }
         });
-    </script><!-- Fully Translucent Overlay Container (Compact & Bottom-Right Placed) -->
+    </script>
+    <!-- Fully Translucent Overlay Container (Compact & Bottom-Right Placed) -->
 <div id="qte-container" style="
     position: fixed; 
     bottom: 20px; 
@@ -96,11 +97,15 @@
     (function() {
         const qteContainer = document.getElementById('qte-container');
 
-        // Verify the file string matches Stealing the Diamond
+        // Check the URL parameter for the correct game filename
         const urlParams = new URLSearchParams(window.location.search);
         const activeSwf = urlParams.get('swf') || "";
-        if (!activeSwf.toLowerCase().includes('stealingthediamond')) {
-            return;
+        
+        // Show the buttons permanently ONLY if it matches stealingthediamondgame.swf
+        if (activeSwf.toLowerCase().includes('stealingthediamondgame.swf')) {
+            qteContainer.style.display = 'flex';
+        } else {
+            return; // Exit and leave buttons hidden for any other game
         }
 
         // Keyboard event factory
@@ -120,41 +125,12 @@
             });
         }
 
-        // Mobile touch triggers mapping K (Kick), Space (Jump), and R (Ram)
+        // Mobile touch triggers mapping K, Space, and R
         document.getElementById('btn-k').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('k', 75); });
         document.getElementById('btn-space').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey(' ', 32); });
         document.getElementById('btn-r').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('r', 82); });
-
-        // Listen directly to Ruffle's native frame system
-        function initFrameTracker() {
-            const player = document.querySelector('ruffle-player');
-            if (!player) {
-                setTimeout(initFrameTracker, 100);
-                return;
-            }
-
-            // Hook into Ruffle's official frame change listener API
-            player.onCurrentFrameChanged = function(currentFrame) {
-                // Frames 180 to 420 represent the exact Scooter QTE sequence in the SWF file
-                if (currentFrame >= 180 && currentFrame <= 420) {
-                    if (qteContainer.style.display !== 'flex') {
-                        qteContainer.style.display = 'flex';
-                    }
-                } else {
-                    if (qteContainer.style.display !== 'none') {
-                        qteContainer.style.display = 'none';
-                    }
-                }
-            };
-        }
-
-        // Start tracking when loaded
-        if (document.readyState === 'loading') {
-            window.addEventListener('DOMContentLoaded', initFrameTracker);
-        } else {
-            initFrameTracker();
-        }
     })();
 </script>
+
 </body>
 </html>
