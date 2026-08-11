@@ -77,83 +77,114 @@
             }
         });
     </script>
-<!-- Fully Translucent Overlay Container -->
-<div id="qte-container" style="
-    position: fixed; 
-    bottom: 40px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    display: none; 
-    gap: 20px; 
-    z-index: 2147483647; 
-    pointer-events: none;
-">
-    <!-- Buttons restore pointer events so they can be tapped -->
-    <button id="btn-r" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.85); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold; -webkit-user-select: none; user-select: none;">R</button>
-    <button id="btn-k" style="pointer-events: auto; width: 70px; height: 70px; background: rgba(0,0,0,0.85); color: white; border: 2px solid white; border-radius: 50%; font-size: 28px; font-weight: bold; -webkit-user-select: none; user-select: none;">K</button>
-    <button id="btn-space" style="pointer-events: auto; width: 120px; height: 70px; background: rgba(0,0,0,0.85); color: white; border: 2px solid white; border-radius: 35px; font-size: 20px; font-weight: bold; -webkit-user-select: none; user-select: none;">SPACE</button>
+<!-- Persistent Overlay Controls Container -->
+<div id="std-mobile-overlay" style="display: none; position: fixed; bottom: 5%; left: 50%; transform: translateX(-50%); z-index: 99999; width: 90%; max-width: 420px; font-family: sans-serif; pointer-events: none;">
+    
+    <!-- Collapse/Expand Toggle Anchor -->
+    <div style="display: flex; justify-content: center; margin-bottom: 8px; pointer-events: auto;">
+        <button id="std-toggle-btn" style="width: 44px; height: 44px; background-color: rgba(30, 30, 30, 0.9); border: 2px solid #fff; border-radius: 50%; color: #fff; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); touch-action: manipulation; transition: transform 0.2s ease;">
+            ▼
+        </button>
+    </div>
+
+    <!-- Interactive Buttons Pad Tray -->
+    <div id="std-button-tray" style="display: flex; justify-content: space-between; align-items: center; background-color: rgba(0, 0, 0, 0.65); padding: 15px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); pointer-events: auto; transition: all 0.2s ease-in-out;">
+        <!-- Ram Action Button (K) -->
+        <div style="text-align: center;">
+            <button id="btn-key-k" style="width: 70px; height: 70px; background: linear-gradient(145deg, #ffffff, #dddddd); border: 3px solid #111; border-radius: 50%; font-size: 24px; font-weight: bold; color: #000; box-shadow: 0 5px 0 #999, 0 6px 10px rgba(0,0,0,0.4); touch-action: manipulation; active: transform 0.1s;">K</button>
+            <div style="color: #fff; font-size: 11px; margin-top: 4px; font-weight: bold; text-shadow: 1px 1px 2px #000;">RAM</div>
+        </div>
+
+        <!-- Jump Action Button (Space) -->
+        <div style="text-align: center; flex-grow: 1; margin-left: 20px;">
+            <button id="btn-key-space" style="width: 100%; max-width: 180px; height: 70px; background: linear-gradient(145deg, #ffffff, #dddddd); border: 3px solid #111; border-radius: 15px; font-size: 18px; font-weight: bold; color: #000; box-shadow: 0 5px 0 #999, 0 6px 10px rgba(0,0,0,0.4); touch-action: manipulation;">SPACE</button>
+            <div style="color: #fff; font-size: 11px; margin-top: 4px; font-weight: bold; text-shadow: 1px 1px 2px #000;">JUMP</div>
+        </div>
+    </div>
 </div>
 
 <script>
-    (function() {
-        const qteContainer = document.getElementById('qte-container');
-
-        // Verify file matches your target layout from the address search criteria
+    window.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const activeSwf = urlParams.get('swf') || "";
+        const swfParam = urlParams.get('swf') || '';
 
-        // Completely exit if the file string is not Stealing the Diamond
-        if (!activeSwf.toLowerCase().includes('stealingthediamond')) {
-            return;
-        }
-
-        // Keyboard event factory targeting the custom elements safely
-        function triggerKey(keyChar, keyCode) {
-            const player = document.querySelector('ruffle-player') || document.querySelector('#player') || window;
-            const target = player.shadowRoot?.activeElement || player;
+        // Strict match validation for stealingthediamondgame.swf
+        if (swfParam.toLowerCase().includes('stealingthediamondgame.swf')) {
+            const overlay = document.getElementById('std-mobile-overlay');
+            const toggleBtn = document.getElementById('std-toggle-btn');
+            const buttonTray = document.getElementById('std-button-tray');
             
-            ['keydown', 'keyup'].forEach(eventType => {
-                target.dispatchEvent(new KeyboardEvent(eventType, {
-                    key: keyChar,
-                    code: keyChar === ' ' ? 'Space' : 'Key' + keyChar.toUpperCase(),
-                    keyCode: keyCode,
-                    which: keyCode,
+            const kBtn = document.getElementById('btn-key-k');
+            const spaceBtn = document.getElementById('btn-key-space');
+
+            let isCollapsed = false;
+
+            // Make entire overlay frame wrapper active
+            overlay.style.display = 'block';
+
+            // Handle tray minimize / maximize mechanics
+            const toggleMenu = () => {
+                isCollapsed = !isCollapsed;
+                if (isCollapsed) {
+                    buttonTray.style.opacity = '0';
+                    buttonTray.style.transform = 'scale(0.85) translateY(20px)';
+                    buttonTray.style.pointerEvents = 'none';
+                    toggleBtn.innerText = '▲';
+                    toggleBtn.style.transform = 'rotate(180deg)';
+                } else {
+                    buttonTray.style.opacity = '1';
+                    buttonTray.style.transform = 'scale(1) translateY(0)';
+                    buttonTray.style.pointerEvents = 'auto';
+                    toggleBtn.innerText = '▼';
+                    toggleBtn.style.transform = 'rotate(0deg)';
+                }
+            };
+
+            toggleBtn.addEventListener('click', toggleMenu);
+            toggleBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                toggleMenu();
+            });
+
+            // Clean event dispatcher directly targets the Ruffle player instance canvas
+            const fireKey = (type, keyStr, codeStr, codeNum) => {
+                const kEvent = new KeyboardEvent(type, {
+                    key: keyStr,
+                    code: codeStr,
+                    keyCode: codeNum,
+                    which: codeNum,
                     bubbles: true,
                     cancelable: true
-                }));
-            });
+                });
+                
+                window.dispatchEvent(kEvent);
+                const ruffleCanvas = document.querySelector('ruffle-player');
+                if (ruffleCanvas) {
+                    ruffleCanvas.dispatchEvent(kEvent);
+                }
+            };
+
+            // Touch event mapping to mitigate typical mobile browser click delays
+            const bindMobileKey = (element, keyStr, codeStr, codeNum) => {
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    element.style.transform = 'translateY(4px)';
+                    element.style.boxShadow = '0 1px 0 #999, 0 2px 5px rgba(0,0,0,0.4)';
+                    fireKey('keydown', keyStr, codeStr, codeNum);
+                });
+
+                element.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    element.style.transform = 'translateY(0)';
+                    element.style.boxShadow = '0 5px 0 #999, 0 6px 10px rgba(0,0,0,0.4)';
+                    fireKey('keyup', keyStr, codeStr, codeNum);
+                });
+            };
+
+            bindMobileKey(kBtn, 'k', 'KeyK', 75);
+            bindMobileKey(spaceBtn, ' ', 'Space', 32);
         }
-
-        // Mobile touch hooks with browser default suppression
-        document.getElementById('btn-r').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('r', 82); });
-        document.getElementById('btn-k').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey('k', 75); });
-        document.getElementById('btn-space').addEventListener('touchstart', (e) => { e.preventDefault(); triggerKey(' ', 32); });
-
-        // Event listener to watch for touch choices on the main game canvas area
-        window.addEventListener('touchstart', function(e) {
-            // If the overlay buttons are already up, don't restart tracking timers
-            if (qteContainer.style.display === 'flex') return;
-
-            // When a user taps the screen, check if they are touching the top half or coordinate boundaries
-            // This detects the menu option selection area for the "Bust In" button placement
-            const touchY = e.touches[0].clientY;
-            const screenHeight = window.innerHeight;
-
-            // "Bust In" is typically positioned near the upper quadrant of the option screen
-            if (touchY < (screenHeight * 0.6)) {
-                // Wait exactly 4.2 seconds for the scooter intro animation to play out
-                setTimeout(() => {
-                    qteContainer.style.display = 'flex';
-                    
-                    // Keep buttons active for exactly 11 seconds (duration of the scooter path QTE) then clear
-                    setTimeout(() => {
-                        qteContainer.style.display = 'none';
-                    }, 11000);
-
-                }, 4200); 
-            }
-        });
-    })();
+    });
 </script>
 </body>
 </html>
