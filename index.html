@@ -3,6 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script>
+    // 1. Snag the parameter from the web address
+    const urlParams = new URLSearchParams(window.location.search);
+    const appKey = urlParams.get('icon') || 'std'; // default to stealing the diamond
+
+    // 2. Set up names and icon files for each legacy game
+    const gameProfiles = {
+      "ctp": { name: "Crossing the Pit", icon: "icons/ctp-ios.png" },
+      "btb": { name: "Breaking the Bank", icon: "icons/btb-ios.png" },
+      "etp": { name: "Escaping the Prison", icon: "icons/etp-ios.png" },
+      "std": { name: "Stealing the Diamond", icon: "icons/std-ios.png" },
+      "ita": { name: "Infiltrating the Airship", icon: "icons/ita-ios.png" },
+      "ftc": { name: "Fleeing the Complex", icon: "icons/ftc-ios.png" }
+    };
+
+    // Grab the right game data (or use standard fallback if misspelled)
+    const activeGame = gameProfiles[appKey.toLowerCase()] || gameProfiles["std"];
+
+    // 3. Construct the manifest format for Chrome
+    const customManifest = {
+      "name": activeGame.name,
+      "short_name": activeGame.name,
+      "start_url": window.location.href, // This saves the parameter so it opens the right game later!
+      "display": "standalone",
+      "background_color": "#000000",
+      "theme_color": "#000000",
+      "icons": [
+        {
+          "src": activeGame.icon,
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": activeGame.icon,
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    };
+
+    // 4. Feed the manifest directly to Chrome's parser
+    const manifestBlob = new Blob([JSON.stringify(customManifest)], { type: 'application/json' });
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = URL.createObjectURL(manifestBlob);
+    document.head.appendChild(manifestLink);
+    </script>
     <title>SWF Player</title>
     <style>
         /* Force absolute viewport boundaries across modern mobile browsers */
